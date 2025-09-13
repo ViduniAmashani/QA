@@ -39,5 +39,5 @@ public class AuthStepDefs {
     public void check_result(String expected) {
         assertEquals(expected, lastResult);
     }
-    //
+
 }

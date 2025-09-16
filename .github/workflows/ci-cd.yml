@@ -27,10 +27,10 @@ jobs:
         run: |
           nohup mvn spring-boot:run &
           echo "Waiting for backend to start..."
-          n=0
-          until curl -s http://localhost:8080/actuator/health | grep "UP"; do
-            n=$((n+1))
-            if [ $n -ge 30 ]; then
+          timeout=60
+          while ! curl -s http://localhost:8080/actuator/health | grep "UP"; do
+            timeout=$((timeout-1))
+            if [ $timeout -le 0 ]; then
               echo "Backend did not start in time"
               exit 1
             fi

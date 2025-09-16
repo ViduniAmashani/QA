@@ -19,7 +19,7 @@ jobs:
         run: mvn clean install -DskipTests
 
       - name: Run Unit & API Tests
-        run: mvn test || true   # Run tests but don't fail pipeline if they fail
+        run: mvn test || true
 
       - name: Upload Cucumber Report
         uses: actions/upload-artifact@v4

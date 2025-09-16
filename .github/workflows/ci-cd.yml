@@ -19,6 +19,11 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: Start backend server
+        run: |
+          nohup mvn spring-boot:run &
+          sleep 15 # wait until server is ready
+
 
       - name: Build and run tests
         run: mvn clean test || true

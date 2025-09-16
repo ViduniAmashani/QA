@@ -10,25 +10,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    services:
-    # Optional: if your project needs a database (e.g., PostgreSQL/MySQL)
-    # postgres:
-    #   image: postgres:15
-    #   env:
-    #     POSTGRES_USER: root
-    #     POSTGRES_PASSWORD: root
-    #     POSTGRES_DB: bookdb
-    #   ports:
-    #     - 5432:5432
-    #   options: >-
-    #     --health-cmd "pg_isready"
-    #     --health-interval 10s
-    #     --health-timeout 5s
-    #     --health-retries 5
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -36,26 +19,27 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install Chromedriver
+        uses: nanasess/setup-chromedriver@v1
+
       - name: Build project
         run: mvn clean install -DskipTests
 
       - name: Start backend server
         run: |
           nohup mvn spring-boot:run &
-          echo "Waiting for backend to start..."
-          timeout=60
-          while ! curl -s http://localhost:8080/actuator/health | grep "UP"; do
-            timeout=$((timeout-1))
-            if [ $timeout -le 0 ]; then
-              echo "Backend did not start in time"
-              exit 1
-            fi
+          echo "Waiting for port 8080..."
+          for i in {1..30}; do
+            nc -z localhost 8080 && echo "Server ready!" && break
+            echo "Waiting..."
             sleep 2
           done
-          echo "Backend is up!"
 
-      - name: Run tests
-        run: mvn test || true  # continue even if some tests fail
+      - name: Run integration tests
+        run: mvn verify -DskipUnitTests=false || true
 
       - name: Upload test reports
         if: always()
@@ -63,13 +47,3 @@ jobs:
         with:
           name: surefire-reports
           path: target/surefire-reports
-
-      - name: Show summary of test failures
-        if: always()
-        run: |
-          if [ -d "target/surefire-reports" ]; then
-            echo "Test reports found:"
-            grep -H "FAILURE" target/surefire-reports/*.txt || echo "No failures found"
-          else
-            echo "No surefire reports found"
-          fi

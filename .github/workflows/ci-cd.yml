@@ -19,15 +19,27 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Build project
+        run: mvn clean install -DskipTests
+
       - name: Start backend server
         run: |
           nohup mvn spring-boot:run &
-          sleep 15 # wait until server is ready
+          echo "Waiting for backend to start..."
+          n=0
+          until curl -s http://localhost:8080/actuator/health | grep "UP"; do
+            n=$((n+1))
+            if [ $n -ge 30 ]; then
+              echo "Backend did not start in time"
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Backend is up!"
 
-
-      - name: Build and run tests
-        run: mvn clean test || true
-        # '|| true' ensures the workflow continues even if tests fail
+      - name: Run tests
+        run: mvn test || true  # continue even if some tests fail
 
       - name: Upload test reports
         if: always()
